@@ -1,0 +1,9 @@
+# Local backup snapshots — not part of the published site
+backup/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.tmp
