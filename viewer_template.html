@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graha Transits · Sidereal (Lahiri)</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e7e9ee; --muted:#9aa3b2; --accent:#e0a458; --accent2:#6ea8fe;
+    --retro:#e06c75; --combust:#e0a458; --ingress:#7fd1a3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{padding:18px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;padding:14px 22px;
+    border-bottom:1px solid var(--line);background:var(--panel2);align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:4px}
+  .ctl label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  select,input[type=text]{background:var(--bg);color:var(--txt);border:1px solid var(--line);
+    border-radius:7px;padding:7px 9px;font-size:13px;min-width:110px}
+  input[type=text]{min-width:180px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{padding:5px 11px;border-radius:20px;border:1px solid var(--line);cursor:pointer;
+    font-size:12.5px;user-select:none;background:var(--bg);color:var(--muted)}
+  .chip.on{background:var(--accent);color:#1a1205;border-color:var(--accent);font-weight:600}
+  .chip.type.on{background:var(--accent2);color:#04122e;border-color:var(--accent2)}
+  .wrap{padding:0 22px 40px}
+  .count{color:var(--muted);font-size:12.5px;padding:12px 0 8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{position:sticky;top:0;background:var(--panel);font-size:11px;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--muted);cursor:pointer}
+  tr:hover td{background:#141922}
+  .graha{font-weight:600}
+  .tag{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.5px;font-weight:600}
+  .tag.ingress{background:rgba(127,209,163,.15);color:var(--ingress)}
+  .tag.retro{background:rgba(224,108,117,.15);color:var(--retro)}
+  .tag.direct{background:rgba(110,168,254,.15);color:var(--accent2)}
+  .tag.combust{background:rgba(224,164,88,.15);color:var(--combust)}
+  .mono{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dim{color:var(--muted)}
+  .foot{color:var(--muted);font-size:11.5px;padding:16px 22px;border-top:1px solid var(--line)}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Graha Transits, Retrogression &amp; Combustion</h1>
+  <div class="sub" id="meta"></div>
+</header>
+
+<div class="controls">
+  <div class="ctl">
+    <label>Timezone</label>
+    <select id="tz">
+      <option value="330" selected>IST (+05:30)</option>
+      <option value="0">UTC</option>
+      <option value="-300">US East (−05:00)</option>
+      <option value="-480">US Pacific (−08:00)</option>
+      <option value="60">CET (+01:00)</option>
+      <option value="240">Gulf (+04:00)</option>
+      <option value="480">Singapore (+08:00)</option>
+    </select>
+  </div>
+  <div class="ctl">
+    <label>Year</label>
+    <select id="year"></select>
+  </div>
+  <div class="ctl">
+    <label>Search sign / graha</label>
+    <input type="text" id="search" placeholder="e.g. Leo, Saturn">
+  </div>
+  <div class="ctl" style="flex:1">
+    <label>Graha</label>
+    <div class="chips" id="grahaChips"></div>
+  </div>
+  <div class="ctl">
+    <label>Event</label>
+    <div class="chips" id="typeChips"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="count" id="count"></div>
+  <table>
+    <thead><tr>
+      <th data-k="ts">Date / Time</th>
+      <th data-k="graha">Graha</th>
+      <th data-k="type">Event</th>
+      <th>Details</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">No events match these filters.</div>
+</div>
+
+<div class="foot" id="foot"></div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const GRAHAS = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+const TYPES = [["ingress","Transit"],["retro","Retrograde"],["direct","Direct"],["combust","Combustion"]];
+
+// ---- flatten all events into one list ------------------------------------
+function buildEvents(){
+  const ev=[];
+  for(const g of GRAHAS){
+    const p=DATA.planets[g]; if(!p) continue;
+    for(const i of p.ingresses)
+      ev.push({ts:i.utc,graha:g,type:"ingress",retro:i.retrograde,
+               detail:`${i.from} → ${i.to}`+(i.retrograde?" (retrograde)":"")});
+    for(const s of p.stations)
+      ev.push({ts:s.utc,graha:g,type:s.type==="retrograde"?"retro":"direct",
+               detail:`Turns ${s.type} · ${s.sign} ${s.deg.toFixed(2)}°`});
+    for(const c of p.combustions)
+      ev.push({ts:c.start_utc,tsEnd:c.end_utc,graha:g,type:"combust",
+               detail:`Combust in ${c.sign}`});
+  }
+  ev.sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);
+  return ev;
+}
+const ALL = buildEvents();
+
+// ---- timezone-aware formatting -------------------------------------------
+function fmt(iso, offsetMin){
+  const d=new Date(iso);                          // iso ends in Z -> UTC
+  const shifted=new Date(d.getTime()+offsetMin*60000);
+  const p=n=>String(n).padStart(2,"0");
+  const mon=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${p(shifted.getUTCDate())} ${mon[shifted.getUTCMonth()]} ${shifted.getUTCFullYear()}, `
+       + `${p(shifted.getUTCHours())}:${p(shifted.getUTCMinutes())}`;
+}
+function yr(iso, offsetMin){
+  return new Date(new Date(iso).getTime()+offsetMin*60000).getUTCFullYear();
+}
+
+// ---- state / UI ----------------------------------------------------------
+const state={tz:330,year:"all",search:"",
+  grahas:new Set(GRAHAS), types:new Set(TYPES.map(t=>t[0]))};
+
+function chip(text,on,cls){const d=document.createElement("div");
+  d.className="chip"+(cls?" "+cls:"")+(on?" on":"");d.textContent=text;return d;}
+
+function buildChips(){
+  const gc=document.getElementById("grahaChips");
+  GRAHAS.forEach(g=>{const c=chip(g,true);c.onclick=()=>{
+    c.classList.toggle("on");c.classList.contains("on")?state.grahas.add(g):state.grahas.delete(g);render();};
+    gc.appendChild(c);});
+  const tc=document.getElementById("typeChips");
+  TYPES.forEach(([k,lbl])=>{const c=chip(lbl,true,"type");c.onclick=()=>{
+    c.classList.toggle("on");c.classList.contains("on")?state.types.add(k):state.types.delete(k);render();};
+    tc.appendChild(c);});
+}
+
+function buildYears(){
+  const sel=document.getElementById("year");
+  const s=DATA.meta.range.start, e=DATA.meta.range.end;
+  sel.innerHTML='<option value="all">All years</option>';
+  for(let y=s;y<e;y++)sel.innerHTML+=`<option value="${y}">${y}</option>`;
+  sel.value="all";
+}
+
+function render(){
+  const off=state.tz, q=state.search.trim().toLowerCase();
+  const rows=document.getElementById("rows");
+  let html="", n=0;
+  for(const e of ALL){
+    if(!state.grahas.has(e.graha))continue;
+    if(!state.types.has(e.type))continue;
+    if(state.year!=="all" && yr(e.ts,off)!=+state.year)continue;
+    if(q && !(e.graha.toLowerCase().includes(q)||e.detail.toLowerCase().includes(q)))continue;
+    n++;
+    const tcls=e.type==="ingress"?"ingress":e.type==="retro"?"retro":e.type==="direct"?"direct":"combust";
+    const tlabel=e.type==="ingress"?"Transit":e.type==="retro"?"Retrograde":e.type==="direct"?"Direct":"Combust";
+    let when=`<span class="mono">${fmt(e.ts,off)}</span>`;
+    if(e.type==="combust")
+      when+=`<div class="dim mono">→ ${fmt(e.tsEnd,off)}</div>`;
+    html+=`<tr><td>${when}</td><td class="graha">${e.graha}</td>`
+        + `<td><span class="tag ${tcls}">${tlabel}</span></td>`
+        + `<td>${e.detail}</td></tr>`;
+  }
+  rows.innerHTML=html;
+  document.getElementById("empty").style.display=n?"none":"block";
+  document.getElementById("count").textContent=`${n.toLocaleString()} events`;
+}
+
+// ---- init ----------------------------------------------------------------
+document.getElementById("meta").textContent =
+  `${DATA.meta.engine} · ${DATA.meta.ayanamsa} · sidereal · `
+  + `${DATA.meta.range.start}–${DATA.meta.range.end} · nodes: ${DATA.meta.node}`;
+const orbs=DATA.meta.combustion_orbs_deg;
+document.getElementById("foot").innerHTML =
+  "Combustion orbs (direct / retrograde°): "
+  + Object.entries(orbs).map(([k,v])=>`${k} ${v[0]}${v[0]!==v[1]?"/"+v[1]:""}`).join(" · ")
+  + `<br>Times shown in selected timezone; stored in UTC. Generated ${DATA.meta.generated_utc}. `
+  + "Verify against your Jagannatha Hora settings before relying on results.";
+
+document.getElementById("tz").onchange=e=>{state.tz=+e.target.value;render();};
+document.getElementById("year").onchange=e=>{state.year=e.target.value;render();};
+document.getElementById("search").oninput=e=>{state.search=e.target.value;render();};
+
+buildChips();buildYears();render();
+</script>
+</body>
+</html>
