@@ -54,8 +54,13 @@ are not cut points — Guru's drishti is motion-independent.)
 - `index.html` fetches `transits.json`; `graha-transits.html` is the embedded offline build.
 - Fonts (Caprasimo, Figtree) load from Google Fonts with system fallbacks (works offline).
 - **Defaults on load:** current year (from the clock, clamped to data range), whole-year view,
-  only the slow grahas selected (Jupiter, Saturn, Rahu, Ketu). Sanskrit rasi names; light theme;
-  IST timezone. Users can toggle any of these.
+  only the slow grahas selected (Jupiter, Saturn, Rahu, Ketu). Sanskrit rasi names; light theme.
+  **Timezone auto-detected from the browser** (`detectTZ` via `Intl` — free, no permission, offline;
+  legacy aliases like `Asia/Calcutta`→`Asia/Kolkata` canonicalized; falls back to IST), with a
+  curated ~33-zone worldwide picker (`TZS`) that pins the detected zone; IST always available.
+  Times use `tzAbbr(ms)` (DST-correct via `Intl`, with an `IST` override for India). Location is
+  NOT otherwise used — gochara is geocentric, so transits are identical worldwide; only the display
+  clock changes. Users can toggle any of these.
 - **Hosting plan:** free static host (GitHub Pages preferred; Netlify Drop = fastest). No custom
   domain needed, low traffic. HTTPS from the host; app is read-only/static.
 

@@ -435,14 +435,26 @@ const GCOLOR={Sun:"#d99a2b",Moon:"#8a93a6",Mars:"#c0492b",Mercury:"#6f8b4e",Jupi
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONL=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const TZS=[
-  ["Asia/Kolkata","IST +05:30"],["UTC","UTC +00:00"],["America/New_York","New York"],
-  ["America/Los_Angeles","Los Angeles"],["Europe/London","London"],["Asia/Dubai","Dubai +04:00"],
-  ["Asia/Singapore","Singapore +08:00"],["Asia/Tokyo","Tokyo +09:00"],["Australia/Sydney","Sydney"]
+  ["Pacific/Honolulu","Honolulu"],["America/Anchorage","Anchorage"],["America/Los_Angeles","Los Angeles"],
+  ["America/Denver","Denver"],["America/Chicago","Chicago"],["America/New_York","New York"],
+  ["America/Mexico_City","Mexico City"],["America/Bogota","Bogota"],["America/Sao_Paulo","Sao Paulo"],
+  ["America/Argentina/Buenos_Aires","Buenos Aires"],["UTC","UTC"],["Europe/London","London"],
+  ["Europe/Paris","Paris"],["Europe/Berlin","Berlin"],["Africa/Lagos","Lagos"],["Africa/Cairo","Cairo"],
+  ["Africa/Johannesburg","Johannesburg"],["Europe/Moscow","Moscow"],["Asia/Jerusalem","Jerusalem"],
+  ["Asia/Dubai","Dubai"],["Asia/Karachi","Karachi"],["Asia/Kolkata","India — IST"],
+  ["Asia/Kathmandu","Kathmandu"],["Asia/Dhaka","Dhaka"],["Asia/Bangkok","Bangkok"],
+  ["Asia/Singapore","Singapore"],["Asia/Shanghai","Beijing / Shanghai"],["Asia/Hong_Kong","Hong Kong"],
+  ["Asia/Tokyo","Tokyo"],["Asia/Seoul","Seoul"],["Australia/Perth","Perth"],
+  ["Australia/Sydney","Sydney"],["Pacific/Auckland","Auckland"]
 ];
 const DAY=86400000;
 
 let DATA=null, EVENTS=[], YEARS=[];
-const state={ year:null, month:null /*0-11 or null=whole year*/, tz:"Asia/Kolkata", rasiLang:"sanskrit", grahas:new Set(DEFAULT_GRAHAS) };
+/* deprecated IANA aliases some systems still report -> canonical (so they match the curated list) */
+const TZ_ALIAS={"Asia/Calcutta":"Asia/Kolkata","Asia/Katmandu":"Asia/Kathmandu","Asia/Rangoon":"Asia/Yangon","Asia/Saigon":"Asia/Ho_Chi_Minh","Asia/Dacca":"Asia/Dhaka","America/Buenos_Aires":"America/Argentina/Buenos_Aires","Europe/Kiev":"Europe/Kyiv","US/Eastern":"America/New_York","US/Central":"America/Chicago","US/Mountain":"America/Denver","US/Pacific":"America/Los_Angeles","US/Hawaii":"Pacific/Honolulu"};
+/* visitor's timezone straight from the browser/OS — free, no permission, offline (falls back to IST) */
+function detectTZ(){ try{ const z=Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Kolkata"; return TZ_ALIAS[z]||z; }catch(e){ return "Asia/Kolkata"; } }
+const state={ year:null, month:null /*0-11 or null=whole year*/, tz:detectTZ(), rasiLang:"sanskrit", grahas:new Set(DEFAULT_GRAHAS) };
 
 /* ---------- load ---------- */
 const $=s=>document.querySelector(s);
@@ -505,9 +517,16 @@ function localToUTC(y,m0,d,tz){ // local wall midnight -> UTC ms
 function fmtDateTime(ms){
   const p=parts(ms,state.tz);
   const wd=new Intl.DateTimeFormat("en-GB",{timeZone:state.tz,weekday:"short"}).format(new Date(ms));
-  return {date:`${wd} ${p.d} ${MON[p.m-1]} ${p.y}`, time:`${p.hh}:${p.mm} ${abbrTz()}`, dayKey:`${p.y}-${p.m}-${p.d}`, day:p.d, m:p.m, y:p.y};
+  return {date:`${wd} ${p.d} ${MON[p.m-1]} ${p.y}`, time:`${p.hh}:${p.mm} ${tzAbbr(ms)}`, dayKey:`${p.y}-${p.m}-${p.d}`, day:p.d, m:p.m, y:p.y};
 }
-function abbrTz(){ const l=(TZS.find(t=>t[0]===state.tz)||["",""])[1]; return l.split(" ")[0]; }
+/* friendly abbreviations for no-DST zones where Intl only gives a bare GMT offset */
+const TZ_ABBR={"Asia/Kolkata":"IST"};
+/* short, DST-correct timezone name for a given instant (e.g. IST, EDT, GMT+5:30) */
+function tzAbbr(ms){
+  if(TZ_ABBR[state.tz]) return TZ_ABBR[state.tz];
+  try{ const p=new Intl.DateTimeFormat("en-US",{timeZone:state.tz,timeZoneName:"short"}).formatToParts(new Date(ms)); const t=p.find(x=>x.type==="timeZoneName"); return t?t.value:""; }
+  catch(e){ return ""; }
+}
 
 /* ---------- window ---------- */
 function windowRange(){
@@ -526,9 +545,14 @@ function inWindow(e,s,en){
 /* ---------- UI init ---------- */
 function initUI(){
   $("#ayan").textContent=(DATA.meta&&DATA.meta.ayanamsa)||"sidereal";
-  // tz
-  const tz=$("#tz"); tz.innerHTML=TZS.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("");
-  tz.value=state.tz; tz.onchange=()=>{ state.tz=tz.value; buildEvents(); syncYearOpts(); render(); };
+  // tz — curated list; the visitor's detected zone is added if missing and pre-selected
+  const tz=$("#tz");
+  let opts=TZS.slice();
+  if(!TZS.some(t=>t[0]===state.tz)){ const city=state.tz.replace(/_/g," ").replace(/.*\//,""); opts=[[state.tz,city],...opts]; }
+  tz.innerHTML=opts.map(t=>`<option value="${t[0]}"${t[0]===state.tz?" selected":""}>${t[1]}</option>`).join("");
+  tz.value=state.tz;
+  tz.title="Times shown in "+state.tz.replace(/_/g," ")+" — auto-detected, change anytime";
+  tz.onchange=()=>{ state.tz=tz.value; tz.title="Times shown in "+state.tz.replace(/_/g," "); buildEvents(); syncYearOpts(); render(); };
   // year — default to the current year (in the display tz), clamped to the data range
   const curY = parts(Date.now(), state.tz).y;
   state.year = YEARS.includes(curY) ? curY : (curY < YEARS[0] ? YEARS[0] : YEARS[YEARS.length-1]);
@@ -583,8 +607,8 @@ function render(){
 
   const per = state.month===null?`${state.year}`:`${MONL[state.month]} ${state.year}`;
   $("#boardttl").textContent=per;
-  $("#boardsub").textContent=`${win.length} event${win.length!==1?"s":""} · ${sel.length} graha${sel.length!==1?"s":""} · ${abbrTz()}`;
-  $("#detailsub").textContent=`${win.length} event${win.length!==1?"s":""} · times in ${abbrTz()}`;
+  $("#boardsub").textContent=`${win.length} event${win.length!==1?"s":""} · ${sel.length} graha${sel.length!==1?"s":""} · ${tzAbbr(Date.now())}`;
+  $("#detailsub").textContent=`${win.length} event${win.length!==1?"s":""} · times in ${tzAbbr(Date.now())}`;
   $("#gocharasub").textContent=`${per} · positions, drishti & the Guru–Shani double transit`;
 
   // capability note (single graha selected)
