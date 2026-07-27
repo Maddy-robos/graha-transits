@@ -48,6 +48,20 @@ It is **time-varying**: recomputed/segmented at every Guru sign change, Shani si
 Shani station (retro/direct). Code: `doubleTransitSegments(winStart, winEnd)`. (Guru stations
 are not cut points — Guru's drishti is motion-independent.)
 
+**NEVER sample one instant to describe a period.** Every graha state shown for a *window*
+(sign, motion, drishti, combustion) must be segmented, not sampled — the window midpoint was
+used once and silently misreported Shani's drishti for weeks after each station. Two clocks,
+deliberately kept apart:
+- Hero (`renderHero`) — the real clock, `Date.now()`. One instant, filter-independent.
+- Gochara cards (`grahaSegments(pl, s, en)`) — cuts the window at that graha's OWN ingresses
+  and stations, so sign/motion/drishti are exact inside every row. Neighbouring rows fold when
+  they'd render identically (same rasi + same drishti); folding across a station sets
+  `mixed`, which suppresses the motion pill and moves the dates to a `retroWindows()`
+  footnote (this is why Guru shows 3 rows by rasi, not 5). Combustion is a footnote with real
+  dates, never a pill. A window with nothing changing renders the plain one-state card.
+- Both agree by construction: the row containing `Date.now()` is chipped `now` and must match
+  the hero on rasi, motion and drishti.
+
 ## Product decisions
 - **Claude Design** (claude.ai/design project `d9b41938-…`) is **design reference ONLY**, never
   the source of math. Its index.html carries outdated/buggy calc — don't re-import blindly.
@@ -61,8 +75,9 @@ are not cut points — Guru's drishti is motion-independent.)
   Times use `tzAbbr(ms)` (DST-correct via `Intl`, with an `IST` override for India). Location is
   NOT otherwise used — gochara is geocentric, so transits are identical worldwide; only the display
   clock changes. Users can toggle any of these.
-- **Hosting plan:** free static host (GitHub Pages preferred; Netlify Drop = fastest). No custom
-  domain needed, low traffic. HTTPS from the host; app is read-only/static.
+- **Hosting: LIVE on GitHub Pages** → https://maddy-robos.github.io/graha-transits/
+  Serves `main` at root path, HTTPS enforced, no custom domain. **Any push to `main` redeploys
+  the public site** — so `main` is production; commit there deliberately.
 
 ## Status
 **Done:** ephemeris generator; transits.json (2026–2126); runtime-fetch viewer + offline build
@@ -80,9 +95,11 @@ against user edge cases); sensible defaults.
   Transit calendar board (collapsible, open) → Timeline (collapsible, closed).
 - [x] Labelled board marks (destination rasi # for transits, R/D for stations).
 - [x] Backup of the previous version at `backup/v1-pre-ux-redesign/`.
+- [x] Period-accurate Gochara cards (`grahaSegments`/`retroWindows`) — replaced midpoint
+  sampling, which showed Shani direct while the hero showed it retrograde. See the calc rules.
 
-**Next:** deploy to GitHub Pages (free static hosting) — pending user go-ahead. Only
-`index.html` + `transits.json` are needed for the live site (or the single `graha-transits.html`).
+**Deployed:** live on GitHub Pages (see Hosting above). The live site needs only
+`index.html` + `transits.json`; `graha-transits.html` is the offline single-file copy.
 
 ## Verifying UI changes
 The in-app browser preview **caps proxied responses at ~1 MB**, so it can't fetch the full

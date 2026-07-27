@@ -142,7 +142,6 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .goc .gh small{color:var(--muted);font-family:var(--font-b);font-weight:600;font-size:12px}
 .goc .pos{margin:11px 0 2px;font-size:14px;color:var(--muted)}
 .goc .pos b{color:var(--text);font-size:15px}
-.goc .movetag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;color:var(--retro);background:var(--retro-bg);border-radius:999px;padding:1px 8px;vertical-align:middle}
 .goc .motiontag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .goc .motiontag.is-retro{color:var(--retro);background:var(--retro-bg)}
 .goc .motiontag.is-direct{color:var(--direct);background:var(--direct-bg)}
@@ -150,6 +149,22 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .rtag{display:inline-flex;align-items:center;background:var(--surface-2);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .rtag.pos{background:var(--transit-bg);border-color:var(--transit);color:var(--transit)}
+/* per-period rows, shown only when a graha's sign or motion changes inside the window */
+.goc .gseg{padding:9px 0;border-top:1px dashed var(--line)}
+.goc .gseg:first-of-type{border-top:none}
+.goc .gseg.is-now{background:color-mix(in oklab,var(--accent) 9%,transparent);border-radius:10px;margin:0 -9px;padding:9px}
+.goc .gseg.is-now+.gseg{border-top:none}
+.goc .gseg-head{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.goc .gseg-when{font-weight:800;font-size:12.5px;font-variant-numeric:tabular-nums}
+.goc .gseg .pos{margin:5px 0 7px}
+.goc .gseg-pat{font-size:11.5px;color:var(--muted-2);font-weight:600}
+.nowchip{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+  background:var(--accent);color:var(--bg);border-radius:999px;padding:2px 7px}
+.goc .gnote{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);
+  font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.goc .gnote+.gnote{margin-top:4px;padding-top:0;border-top:none}
+.goc .gnote.is-retro{color:var(--retro)}
+.goc .gnote.is-comb{color:var(--comb)}
 .goc-dbl{grid-column:1/-1;border:2px solid var(--comb);background:var(--comb-bg)}
 .goc-dbl .gh{color:var(--comb)}
 .goc-dbl .lab{color:color-mix(in oklab,var(--comb) 70%,var(--text))}
@@ -159,6 +174,8 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .goc-dbl .dt{display:flex;flex-direction:column}
 .dt-row{padding:11px 0;border-top:1px dashed color-mix(in oklab,var(--comb) 45%,transparent)}
 .dt-row:first-child{border-top:none;padding-top:2px}
+.dt-row.is-now{background:color-mix(in oklab,var(--comb) 14%,transparent);border-radius:10px;margin:0 -9px;padding:11px 9px}
+.dt-row.is-now+.dt-row{border-top:none}
 .dt-head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
 .dt-when{font-weight:800;font-size:12.5px;color:color-mix(in oklab,var(--comb) 78%,var(--text));font-variant-numeric:tabular-nums}
 .dt-cause{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
@@ -642,7 +659,7 @@ function renderHero(){
   if(nx){
     const after=dtAt(nx.t+1000);
     const nd=fmtDateTime(nx.t).date.replace(/^\w+ /,"");
-    const becomes=after.dbl.length?after.dbl.map(i=>rFull(i)).join(", "):"none";
+    const becomes=after.dbl.length?after.dbl.map(i=>rFull(i)).join(", "):"no double transit";
     nextHtml=`<div class="now-next"><span class="now-next-lab">Next shift · ${nd}</span> — ${nx.cause} → <b>${becomes}</b></div>`;
   }
   el.innerHTML=`
@@ -680,43 +697,102 @@ function doubleTransitSegments(winStart,winEnd){
   return merged;
 }
 
+/* Split [s,en] at THIS graha's own sign changes and stations, so sign, motion and the
+   drishti derived from them are exact inside every sub-period. (Sampling one instant —
+   e.g. the window midpoint — misreports the rest of the period: Shani's drishti reverses
+   at each station, and a graha can re-enter a sign while retrograde.) */
+function grahaSegments(pl,s,en){
+  const P=DATA.planets[pl]||{}, evs=[];
+  const push=arr=>(arr||[]).forEach(e=>{const t=Date.parse(e.utc); if(t>s&&t<en) evs.push(t);});
+  push(P.ingresses);
+  if(pl!=="Rahu"&&pl!=="Ketu") push(P.stations);   // mean nodes: always retrograde, no stations
+  const cuts=[s,...evs.sort((a,b)=>a-b),en], segs=[];
+  for(let i=0;i<cuts.length-1;i++){
+    const t0=cuts[i], t1=cuts[i+1];
+    if(t1-t0<1000) continue;
+    const m=(t0+t1)/2, idx=signAtMs(pl,m), retro=motionAtMs(pl,m);
+    segs.push({t0,t1,idx,retro,mixed:false,asp:drishtiOffsets(pl,idx,retro).map(o=>(idx+o)%12)});
+  }
+  // Fold neighbours that render identically (same rasi, same drishti). Guru's drishti is
+  // motion-independent, so its stations fold away here -> `mixed` marks a row whose motion
+  // is not constant, and the card reports those dates on its own line instead.
+  const merged=[];
+  for(const sg of segs){
+    const last=merged[merged.length-1];
+    if(last&&last.idx===sg.idx&&String(last.asp)===String(sg.asp)){
+      last.t1=sg.t1; if(last.retro!==sg.retro) last.mixed=true;
+    } else merged.push(Object.assign({},sg));
+  }
+  return merged;
+}
+/* retrograde stretches of a graha clipped to [s,en] */
+function retroWindows(pl,s,en){
+  const sta=((DATA.planets[pl]||{}).stations)||[], out=[];
+  let start=motionAtMs(pl,s)?s:null;
+  for(const st of sta){
+    const t=Date.parse(st.utc);
+    if(t<=s||t>=en) continue;
+    if(st.type==="retrograde") start=t;
+    else if(start!==null){ out.push([start,t]); start=null; }
+  }
+  if(start!==null) out.push([start,en]);
+  return out;
+}
+
 function renderGochara(s,en){
   const wrap=$("#gochara");
-  const mid=(s+en)/2;
+  const now=Date.now();
   const grahas=["Jupiter","Saturn","Rahu","Ketu"];
   const gsan={Jupiter:"Guru",Saturn:"Shani",Rahu:"Rahu",Ketu:"Ketu"};
-  const info={};
-  grahas.forEach(pl=>{
-    const idx=signAtMs(pl,mid);
-    const startI=signAtMs(pl,s), endI=signAtMs(pl,en-1);
-    const retro=motionAtMs(pl,mid);
-    const asp=drishtiOffsets(pl,idx,retro).map(o=>(idx+o)%12);
-    info[pl]={idx,asp,moves:startI!==endI,endI,retro};
-  });
+  const dfmt=ms=>fmtDateTime(ms).date.replace(/^\w+ /,"");
+  const pattern=(pl,idx,retro)=>
+      pl==="Saturn" ? (retro?"reversed 11·7·4":"3·7·10")
+    : (pl==="Rahu"||pl==="Ketu") ? (idx%2===0?"5th · 9th · 1 behind":"5th · 9th · 1 ahead")
+    : "5·7·9";
+  // mean nodes are always retrograde, so their motion is not labelled; nor is a `mixed` row's
+  const motion=(pl,g)=>(pl==="Rahu"||pl==="Ketu"||g.mixed)?""
+    :`<span class="motiontag is-${g.retro?"retro":"direct"}">${g.retro?"retrograde":"direct"}</span>`;
+  const tagsOf=asp=>asp.map(i=>`<span class="rtag">${rFull(i)}</span>`).join("");
+  const nowChip=(t0,t1)=>(now>=t0&&now<t1)?`<span class="nowchip">now</span>`:"";
+
   const cards=grahas.map(pl=>{
-    const g=info[pl];
-    const move=g.moves?`<span class="movetag">→ ${rFull(g.endI)}</span>`:"";
-    const labTxt = pl==="Saturn" ? (g.retro?"Drishti · reversed 11·7·4":"Drishti · 3·7·10")
-                 : (pl==="Rahu"||pl==="Ketu") ? (g.idx%2===0?"Drishti · 5th · 9th · 1 behind":"Drishti · 5th · 9th · 1 ahead")
-                 : "Drishti · 5·7·9";
-    const asp=g.asp.map(i=>`<span class="rtag">${rFull(i)}</span>`).join("");
+    const segs=grahaSegments(pl,s,en);
+    const range=(a,b)=>`${dfmt(a)} → ${dfmt(b)}`;
+    // footnote lines: retrograde stretches (only where no row carries an exact pill) & combustion
+    const retro = segs.some(g=>g.mixed)
+      ? retroWindows(pl,s,en).map(w=>range(w[0],w[1]))
+      : [];
+    const combs=((DATA.planets[pl]||{}).combustions||[])
+      .filter(c=>Date.parse(c.start_utc)<en&&Date.parse(c.end_utc)>s)
+      .map(c=>range(Date.parse(c.start_utc),Date.parse(c.end_utc)));
+    const notes=(retro.length?`<div class="gnote is-retro">Retrograde · ${retro.join(" · ")}</div>`:"")
+              +(combs.length?`<div class="gnote is-comb">Combust · ${combs.join(" · ")}</div>`:"");
+    // one stable state across the whole window -> the plain card; otherwise one row per state
+    const body = segs.length<=1
+      ? (()=>{ const g=segs[0]; return `
+        <div class="pos">In <b>${rFull(g.idx)}</b> ${motion(pl,g)}</div>
+        <div class="lab">Drishti · ${pattern(pl,g.idx,g.retro)}</div>
+        <div class="tags">${tagsOf(g.asp)}</div>`; })()
+      : `<div class="lab">Drishti · by period</div>` + segs.map(g=>`
+        <div class="gseg${now>=g.t0&&now<g.t1?" is-now":""}">
+          <div class="gseg-head"><span class="gseg-when">${range(g.t0,g.t1)}</span>${motion(pl,g)}${nowChip(g.t0,g.t1)}</div>
+          <div class="pos">In <b>${rFull(g.idx)}</b> <span class="gseg-pat">${pattern(pl,g.idx,g.retro)}</span></div>
+          <div class="tags">${tagsOf(g.asp)}</div>
+        </div>`).join("");
     return `<div class="goc">
       <div class="gh"><span class="gd" style="background:${GCOLOR[pl]}"></span>${gsan[pl]} <small>${pl}</small></div>
-      <div class="pos">In <b>${rFull(g.idx)}</b> ${statusTags(pl,mid)}${move}</div>
-      <div class="lab">${labTxt}</div>
-      <div class="tags">${asp}</div>
+      ${body}${notes}
     </div>`;
   }).join("");
   // double transit, recomputed per stable sub-period of the window
-  const dfmt=ms=>fmtDateTime(ms).date.replace(/^\w+ /,"");
   const segs=doubleTransitSegments(s,en);
   const rows=segs.map(seg=>{
     const mark=i=>`${i===seg.ji?"Guru sits":"Guru aspects"} · ${i===seg.si?"Shani sits":"Shani aspects"}`;
     const tags=seg.dbl.length
       ? seg.dbl.map(i=>`<span class="rtag">${rFull(i)} <b>${mark(i)}</b></span>`).join("")
-      : `<span class="none">no shared rasi</span>`;
-    return `<div class="dt-row">
-      <div class="dt-head"><span class="dt-when">${dfmt(seg.t0)} → ${dfmt(seg.t1)}</span><span class="dt-cause">${seg.startCause||"period start"}</span></div>
+      : `<span class="none">no rasi under both</span>`;
+    return `<div class="dt-row${now>=seg.t0&&now<seg.t1?" is-now":""}">
+      <div class="dt-head"><span class="dt-when">${dfmt(seg.t0)} → ${dfmt(seg.t1)}</span>${nowChip(seg.t0,seg.t1)}<span class="dt-cause">${seg.startCause||"period start"}</span></div>
       <div class="dt-ctx">Guru ${rFull(seg.ji)} · Shani ${rFull(seg.si)} ${seg.sRetro?"retrograde":"direct"}</div>
       <div class="dt-rasis">${tags}</div>
     </div>`;
