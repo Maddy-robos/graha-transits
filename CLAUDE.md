@@ -61,6 +61,60 @@ deliberately kept apart:
   dates, never a pill. A window with nothing changing renders the plain one-state card.
 - Both agree by construction: the row containing `Date.now()` is chipped `now` and must match
   the hero on rasi, motion and drishti.
+- The same rule binds the phala layer: **bhava** is safe to show for a period (it follows only
+  the graha's own rasi, constant within a `grahaSegments` row), but **vedha is not** — it turns
+  on and off with the other grahas. So period rows use `bhChipsSign()` (bhava only) while
+  instant readouts (`renderHero`, `renderPhala`) use `bhChips()` (bhava + live vedha), and the
+  phala calendar draws vedha as its own time-segmented underbar.
+
+### Gochara phala — bhava favourability + vedha (verified — DO NOT regress)
+Reckoned from the user's **natal Moon rasi** (classical Chandra gochara) and, as a second
+reading, from the **Lagna**. `bhava(signIdx, refIdx)` — the reference rasi itself is the 1st.
+- `FAV[graha]` — auspicious bhavas. Everything else is inauspicious.
+  Sun `3,6,10,11` · Moon `1,3,6,7,10,11` · Mars `3,6,11` · Mercury `2,4,6,8,10,11` ·
+  Jupiter `2,5,7,9,11` · Venus `1,2,3,4,5,8,9,11,12` · Saturn `3,6,11` · Rahu/Ketu `3,6,10,11`.
+- `FAVQ` — **qualified** favourables from the node texts: Rahu `2,7` (if well-aspected),
+  Ketu `12` (moksha). Rendered amber, never counted as plain auspicious.
+- `VEDHA[graha]` — maps each auspicious bhava → the bhava that **obstructs** it. If any other
+  graha occupies that bhava the good result is blocked (red dot / red underbar). Positionally
+  paired with `FAV`, e.g. Venus `1→6, 2→7, 3→10, 4→9, 5→3, 8→5, 9→1, 11→8, 12→2`.
+- Exceptions: **Surya ↔ Shani** and **Chandra ↔ Budha** never obstruct each other (`NOVEDHA`);
+  **Rahu/Ketu neither cause nor suffer vedha** (`BLOCKERS` excludes the nodes, `VEDHA` empty).
+- Vedha applies **only to an otherwise-auspicious** bhava — it blocks good, it does not add bad.
+
+Code: `phalaAt(pl, ms, refIdx, pos)` → `{si, b, state, note, vedhaHouse, block}` where `state`
+is `fav | blocked | qual | unfav`. `refs()` returns the reference rasis the user has set
+(`state.moon` / `state.lagna`, `-1` = unset, persisted in `localStorage` as `gt.moon`/`gt.lagna`).
+Verified: the shipped tables were diffed against the source tables cell-by-cell (all 1296
+graha×reference×position combinations), plus synthetic tests for both exception pairs and the
+node rules, plus a 100-year invariant sweep.
+
+### Touch / narrow-screen handling (DO NOT regress)
+`title` tooltips never fire on touch, and the wide grids get squeezed to a smear on a phone.
+Both are handled generically:
+- **Tap-for-details.** Anything carrying a `title` also carries `data-tip` with the same text —
+  use `setTip(el, s)` for created elements and `tipAttr(s)` inside innerHTML (it escapes and
+  emits both attributes). One delegated click listener drives the `#tip` popover; it flips
+  above/below the target, clamps to the viewport, and closes on outside click / Escape /
+  scroll. Native hover still works on desktop. Newlines in the text are real newlines
+  (`white-space:pre-line`).
+- **Content-driven horizontal pan.** `#grid` and `#pcgrid` sit inside `.gscroll`.
+  `renderBoard` / `renderPhalaCal` set `--panw` from the densest selected row (~22px per board
+  mark, ~15px per phala segment, capped at 3000px); CSS applies it as `min-width`, so a grid
+  pans **only** when squeezing would make it unreadable — at any viewport width. The graha
+  column is `position:sticky` so it stays pinned while panning. Phones additionally get a
+  760px floor. `.swipehint` is toggled on by `syncPanHints()` from real overflow, never by a
+  media query. `.mk::before` grows the marker hit area to finger size on mobile.
+- **Segment labels are measured, not guessed.** `labelPhalaSegs()` reads one band's pixel
+  width after layout and labels only segments ≥13px (all reads before any writes). It must be
+  re-run whenever the section becomes visible — hence the `onOpen` callback on `mkToggle` and
+  the `resize` listener. A percentage threshold does NOT work here: `--panw` changes the band
+  width by up to 10×.
+
+**Performance:** `signAtMs` and `ingressesIn` are binary searches over a per-graha index
+(`SIDX`, built in `buildEvents`); `Intl.DateTimeFormat` instances are memoised per timezone in
+`dtf()`. Both matter — the phala calendar asks for thousands of positions and tooltip dates per
+render (a full-year, all-9-graha render went 1075 ms → ~70 ms). Keep them.
 
 ## Product decisions
 - **Claude Design** (claude.ai/design project `d9b41938-…`) is **design reference ONLY**, never
@@ -75,6 +129,11 @@ deliberately kept apart:
   Times use `tzAbbr(ms)` (DST-correct via `Intl`, with an `IST` override for India). Location is
   NOT otherwise used — gochara is geocentric, so transits are identical worldwide; only the display
   clock changes. Users can toggle any of these.
+- **Natal chart input** (Moon rasi + Lagna) sits at the very top, above the hero. Both are
+  optional and independent: set only the Moon and every phala reading shows one row/band; set
+  both and everything shows two (☾ Moon first — it is the classical basis — then ↑ Lagna). With
+  neither set the phala section shows a call-to-action and the phala calendar hides itself.
+  Stored in `localStorage` only; nothing leaves the browser.
 - **Hosting: LIVE on GitHub Pages** → https://maddy-robos.github.io/graha-transits/
   Serves `main` at root path, HTTPS enforced, no custom domain. **Any push to `main` redeploys
   the public site** — so `main` is production; commit there deliberately.
@@ -97,6 +156,25 @@ against user edge cases); sensible defaults.
 - [x] Backup of the previous version at `backup/v1-pre-ux-redesign/`.
 - [x] Period-accurate Gochara cards (`grahaSegments`/`retroWindows`) — replaced midpoint
   sampling, which showed Shani direct while the hero showed it retrograde. See the calc rules.
+
+**Gochara phala — DONE, shipped:**
+- [x] Natal **Moon rasi + Lagna** input bar at the top (`#moonrasi` / `#lagnarasi`, persisted).
+- [x] **Gochara Phala · right now** — a card per graha: current rasi, the bhava from each
+  reference, the verdict (`✔ auspicious` / `⊘ blocked` / `~ qualified` / `✕ inauspicious`), a
+  red dot when a vedha is active, and a sentence naming the blocking graha and its bhava.
+  Above it, a score strip per reference (`renderPhala`).
+- [x] **Phala calendar** — collapsible band per graha across the selected period, one segment
+  per sign held, coloured by verdict, labelled with the bhava; vedha drawn separately as a red
+  underbar because it switches on/off with the other grahas (the Moon can block for two days).
+  `bhavaSegments` / `vedhaSegments` / `renderPhalaCal`.
+- [x] Bhava chips in the hero (`bhChips`, with live vedha) and on every `grahaSegments` row of
+  the gochara cards (`bhChipsSign`, bhava only); verdict chips on every timeline ingress
+  (`ingressPhala`).
+- [x] Reference table of all `FAV`/`VEDHA` pairs in the "How to read this" panel (`renderRefTable`).
+- [x] Desktop reviewed and signed off by the user.
+- [x] **Mobile pass** (user feedback: hover tooltips dead on touch, wide grids squeezed) —
+  tap-for-details popover + content-driven horizontal pan with a pinned graha column.
+  See "Touch / narrow-screen handling" above.
 
 **Deployed:** live on GitHub Pages (see Hosting above). The live site needs only
 `index.html` + `transits.json`; `graha-transits.html` is the offline single-file copy.
