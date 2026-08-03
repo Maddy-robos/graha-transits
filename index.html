@@ -10,31 +10,37 @@
 <style>
 :root{
   --bg:#f5ead8; --surface:#fbf5e9; --surface-2:#f0e3cd; --line:#e3d4b8;
-  --text:#201e1d; --muted:#7d7364; --muted-2:#9a8f7d;
-  --transit:#6f8b4e; --transit-bg:#e9efdd;
-  --retro:#c0492b;   --retro-bg:#f6e0d8;
-  --direct:#2f7d92;  --direct-bg:#dcecef;
-  --comb:#d98a1f;    --comb-bg:#f8e9cf;
+  --text:#201e1d; --muted:#75695a; --muted-2:#867a67;
+  --transit:#6f8b4e; --transit-bg:#e9efdd; --transit-deep:#47602c;
+  --retro:#c0492b;   --retro-bg:#f6e0d8;   --retro-deep:#96300f;
+  --direct:#2f7d92;  --direct-bg:#dcecef;  --direct-deep:#1b5668;
+  --comb:#d98a1f;    --comb-bg:#f8e9cf;    --comb-deep:#8a5100;
   --accent:#c67139;
-  --fav:#4f8a3d;     --fav-bg:#e6f0da;
-  --unfav:#9d6152;   --unfav-bg:#f1e4de;
-  --qual:#b0821f;    --qual-bg:#f8edd3;
-  --vedha:#cf2b2b;   --vedha-bg:#fbdedc;
+  /* phala verdicts — saturated enough to read as a heatmap, still inside the warm palette.
+     Three roles per verdict: the vivid `--x` fill/border, `--x-ink` for text ON that fill,
+     and `--x-deep` for text on the pale `--x-bg` tint (a tint cannot carry its own hue as
+     text and stay legible — amber-on-amber measured 1.99:1 before this split).
+     unfav is deliberately ORANGE-red and vedha CRIMSON so they never read as one signal. */
+  --fav:#27812f;     --fav-bg:#d2edc7;   --fav-ink:#ffffff;  --fav-deep:#17591f;
+  --unfav:#c44a18;   --unfav-bg:#fadfcd;  --unfav-ink:#ffffff; --unfav-deep:#8f3105;
+  --qual:#dda012;    --qual-bg:#fceec0;   --qual-ink:#3d2c02;  --qual-deep:#775300;
+  --vedha:#cf0b30;   --vedha-bg:#fcd2d9;  --vedha-ink:#ffffff; --vedha-deep:#9e0020;
   --radius:16px; --shadow:0 6px 22px rgba(80,55,20,.10);
   --font-h:"Caprasimo",Georgia,serif; --font-b:"Figtree",system-ui,sans-serif;
 }
 [data-theme="dark"]{
   --bg:#1c1a18; --surface:#262320; --surface-2:#2f2b27; --line:#3c372f;
-  --text:#f2e9d8; --muted:#a99f8d; --muted-2:#867d6d;
-  --transit:#9dbf72; --transit-bg:#2b3320;
-  --retro:#e87a56;   --retro-bg:#3a251d;
-  --direct:#63b7cd;  --direct-bg:#1e3238;
-  --comb:#f0ab4c;    --comb-bg:#3a2c15;
+  --text:#f2e9d8; --muted:#b3a996; --muted-2:#a19784;
+  --transit:#9dbf72; --transit-bg:#2b3320; --transit-deep:#bcd996;
+  --retro:#e87a56;   --retro-bg:#3a251d;   --retro-deep:#ff9a78;
+  --direct:#63b7cd;  --direct-bg:#1e3238;  --direct-deep:#8ad3e6;
+  --comb:#f0ab4c;    --comb-bg:#3a2c15;    --comb-deep:#ffc470;
   --accent:#e0995f;
-  --fav:#9bc973;     --fav-bg:#26311c;
-  --unfav:#d3927c;   --unfav-bg:#37261f;
-  --qual:#e0ac4d;    --qual-bg:#372c14;
-  --vedha:#f2645f;   --vedha-bg:#3b1e1d;
+  /* on a dark tint the bright hue IS the legible text colour, so -deep == the fill */
+  --fav:#5fc766;     --fav-bg:#1d3d22;   --fav-ink:#0b1a0d;  --fav-deep:#7ad880;
+  --unfav:#f5844a;   --unfav-bg:#43271a;  --unfav-ink:#2b1206; --unfav-deep:#ff9a63;
+  --qual:#f7bf35;    --qual-bg:#42320c;   --qual-ink:#2c2103;  --qual-deep:#ffcf55;
+  --vedha:#ff4d68;   --vedha-bg:#481820;  --vedha-ink:#2c060f; --vedha-deep:#ff7086;
   --shadow:0 8px 28px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box}
@@ -54,7 +60,7 @@ button{font-family:inherit;cursor:pointer}
 .top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px}
 .brand h1{font-size:clamp(26px,3.4vw,40px);margin:0;line-height:1}
 .brand p{margin:6px 0 0;color:var(--muted);font-size:14px}
-.brand .ay{color:var(--transit);font-weight:600}
+.brand .ay{color:var(--transit-deep);font-weight:600}
 .top-actions{display:flex;gap:10px;align-items:center}
 .pill{background:var(--surface);border:1.5px solid var(--line);border-radius:999px;
   padding:9px 14px;color:var(--text);font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
@@ -71,20 +77,20 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .now-lead{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted-2);margin-bottom:11px}
 .now-lead b{color:var(--text)}
 .now-dt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.now-dt-label{font-family:var(--font-h);font-size:19px;color:var(--comb)}
+.now-dt-label{font-family:var(--font-h);font-size:19px;color:var(--comb-deep)}
 .now-dt-rasis{display:flex;flex-wrap:wrap;gap:8px}
-.bigrasi{font-family:var(--font-h);font-size:19px;background:var(--surface);border:2px solid var(--comb);color:var(--comb);
+.bigrasi{font-family:var(--font-h);font-size:19px;background:var(--surface);border:2px solid var(--comb);color:var(--comb-deep);
   border-radius:12px;padding:3px 14px;line-height:1.3}
 .now-none{font-style:italic;color:var(--muted);font-size:15px}
 .now-pos{margin-top:13px;color:var(--muted);font-size:13.5px;display:flex;flex-wrap:wrap;gap:3px 16px}
 .now-pos b{color:var(--text);font-weight:700}
 .stag{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;padding:1px 8px;margin-left:5px;border-radius:999px;vertical-align:middle;white-space:nowrap}
-.stag.is-direct{background:var(--direct-bg);color:var(--direct)}
-.stag.is-retro{background:var(--retro-bg);color:var(--retro)}
-.stag.is-comb{background:var(--comb-bg);color:var(--comb)}
+.stag.is-direct{background:var(--direct-bg);color:var(--direct-deep)}
+.stag.is-retro{background:var(--retro-bg);color:var(--retro-deep)}
+.stag.is-comb{background:var(--comb-bg);color:var(--comb-deep)}
 .now-next{margin-top:13px;padding-top:12px;border-top:1px dashed color-mix(in oklab,var(--comb) 40%,transparent);font-size:13px;color:var(--muted)}
 .now-next b{color:var(--text)}
-.now-next-lab{font-weight:800;color:var(--comb);text-transform:uppercase;font-size:11px;letter-spacing:.4px}
+.now-next-lab{font-weight:800;color:var(--comb-deep);text-transform:uppercase;font-size:11px;letter-spacing:.4px}
 
 /* ---- how to read (help) ---- */
 .help{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
@@ -112,14 +118,14 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .cb-note b{color:var(--text)}
 
 /* ---- gochara phala ---- */
-.score{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 2px 14px;font-size:13px;color:var(--muted)}
+.score{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 14px;font-size:13px;color:var(--muted)}
 .score .sc{display:inline-flex;flex-wrap:wrap;align-items:center;gap:5px 7px;font-weight:600;color:var(--text)}
 .score .scd{width:10px;height:10px;border-radius:3px;flex:none}
 .score .scref{font-weight:800;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted-2)}
 .scbar{display:flex;height:9px;width:min(230px,42vw);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
 .scbar i{display:block;height:100%}
 
-.phala{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:13px;margin-bottom:22px}
+.phala{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:13px}
 .phcta{grid-column:1/-1;background:var(--surface);border:1.5px dashed var(--line);border-radius:var(--radius);
   padding:22px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
 .phcta b{color:var(--text)}
@@ -135,36 +141,39 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .ph-pos{margin:9px 0 10px;font-size:13.5px;color:var(--muted)}
 .ph-pos b{color:var(--text);font-size:14.5px;font-weight:700}
 .ph-rows{display:flex;flex-direction:column;gap:5px}
-.ph-row{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:9px;font-size:12.5px;
-  background:var(--surface-2);border:1px solid transparent}
-.ph-row.is-fav{background:var(--fav-bg);border-color:color-mix(in oklab,var(--fav) 35%,transparent)}
-.ph-row.is-unfav{background:var(--unfav-bg);border-color:color-mix(in oklab,var(--unfav) 30%,transparent)}
-.ph-row.is-qual{background:var(--qual-bg);border-color:color-mix(in oklab,var(--qual) 35%,transparent)}
-.ph-row.is-blocked{background:var(--vedha-bg);border-color:color-mix(in oklab,var(--vedha) 35%,transparent)}
+.ph-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:9px;font-size:12.5px;
+  background:var(--surface-2);border:1.5px solid transparent}
+.ph-row.is-fav{background:var(--fav-bg);border-color:var(--fav)}
+.ph-row.is-unfav{background:var(--unfav-bg);border-color:var(--unfav)}
+.ph-row.is-qual{background:var(--qual-bg);border-color:var(--qual)}
+/* "good, but obstructed" — the auspicious green raked through with vedha red */
+.ph-row.is-blocked{border-color:var(--vedha);
+  background:repeating-linear-gradient(135deg,var(--fav-bg),var(--fav-bg) 7px,var(--vedha-bg) 7px,var(--vedha-bg) 14px)}
 .ph-ref{font-size:13px;width:15px;text-align:center;flex:none;color:var(--muted)}
 .ph-bh{font-weight:800;font-variant-numeric:tabular-nums;min-width:34px}
-.ph-vd{font-weight:600;margin-left:auto;text-align:right}
-.ph-row.is-fav .ph-bh,.ph-row.is-fav .ph-vd{color:var(--fav)}
-.ph-row.is-unfav .ph-bh,.ph-row.is-unfav .ph-vd{color:var(--unfav)}
-.ph-row.is-qual .ph-bh,.ph-row.is-qual .ph-vd{color:var(--qual)}
-.ph-row.is-blocked .ph-bh,.ph-row.is-blocked .ph-vd{color:var(--vedha)}
-.ph-row.is-blocked .ph-bh{text-decoration:line-through;text-decoration-thickness:1.5px}
+.ph-vd{font-weight:700;margin-left:auto;text-align:right}
+.ph-row.is-fav .ph-bh,.ph-row.is-fav .ph-vd{color:var(--fav-deep)}
+.ph-row.is-unfav .ph-bh,.ph-row.is-unfav .ph-vd{color:var(--unfav-deep)}
+.ph-row.is-qual .ph-bh,.ph-row.is-qual .ph-vd{color:var(--qual-deep)}
+.ph-row.is-blocked .ph-bh,.ph-row.is-blocked .ph-vd{color:var(--vedha-deep)}
+.ph-row.is-blocked .ph-bh{text-decoration:line-through;text-decoration-thickness:2px}
 .dot{width:9px;height:9px;border-radius:999px;background:var(--vedha);flex:none;display:inline-block;
   box-shadow:0 0 0 3px color-mix(in oklab,var(--vedha) 22%,transparent)}
 .ph-dot-top{position:absolute;top:12px;right:13px}
 .ph-block{display:flex;align-items:flex-start;gap:8px;margin-top:9px;padding-top:9px;
   border-top:1px dashed color-mix(in oklab,var(--vedha) 45%,transparent);font-size:11.5px;color:var(--muted);line-height:1.4}
 .ph-block .dot{margin-top:3px}
-.ph-block b{color:var(--vedha)}
-.ph-note{margin-top:8px;font-size:11px;font-style:italic;color:var(--muted-2)}
+.ph-block b{color:var(--vedha-deep)}
+.ph-note{margin-top:8px;font-size:11px;font-style:italic;color:var(--qual-deep)}
 
 /* bhava chips used inside the hero */
-.bh{display:inline-block;font-size:10.5px;font-weight:800;padding:1px 7px;margin-left:4px;border-radius:999px;
+/* solid pills — at this size a tint reads as grey, so the fill carries the colour */
+.bh{display:inline-block;font-size:10.5px;font-weight:800;padding:1.5px 8px;margin-left:4px;border-radius:999px;
   vertical-align:middle;white-space:nowrap;font-variant-numeric:tabular-nums}
-.bh.is-fav{background:var(--fav-bg);color:var(--fav)}
-.bh.is-unfav{background:var(--unfav-bg);color:var(--unfav)}
-.bh.is-qual{background:var(--qual-bg);color:var(--qual)}
-.bh.is-blocked{background:var(--vedha-bg);color:var(--vedha)}
+.bh.is-fav{background:var(--fav);color:var(--fav-ink)}
+.bh.is-unfav{background:var(--unfav);color:var(--unfav-ink)}
+.bh.is-qual{background:var(--qual);color:var(--qual-ink)}
+.bh.is-blocked{background:var(--vedha);color:var(--vedha-ink)}
 
 /* ---- phala calendar band ---- */
 .pctrack{position:relative;border-bottom:1px solid var(--line);border-left:1.5px solid var(--line);
@@ -172,14 +181,17 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .pcband{position:relative;height:19px}
 .pcband .gline{position:absolute;top:0;bottom:0;z-index:2;pointer-events:none;
   border-left:1px solid color-mix(in oklab,var(--text) 13%,transparent)}
+/* same treatment as the Gochara Phala rows: pale tint, full-strength border, deep text —
+   a whole year of solid fills was too loud to sit next to the rest of the page */
 .pcseg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;
   border-radius:4px;font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;z-index:1;
   border:1px solid transparent}
-.pcseg.is-fav{background:var(--fav-bg);border-color:color-mix(in oklab,var(--fav) 45%,transparent);color:var(--fav)}
-.pcseg.is-unfav{background:var(--unfav-bg);border-color:color-mix(in oklab,var(--unfav) 38%,transparent);color:var(--unfav)}
-.pcseg.is-qual{background:var(--qual-bg);border-color:color-mix(in oklab,var(--qual) 45%,transparent);color:var(--qual)}
-.pcved{position:absolute;bottom:0;height:5px;border-radius:999px;z-index:3;background:var(--vedha);
-  box-shadow:0 0 0 1px color-mix(in oklab,var(--vedha) 40%,transparent);min-width:3px}
+.pcseg.is-fav{background:var(--fav-bg);border-color:var(--fav);color:var(--fav-deep)}
+.pcseg.is-unfav{background:var(--unfav-bg);border-color:var(--unfav);color:var(--unfav-deep)}
+.pcseg.is-qual{background:var(--qual-bg);border-color:var(--qual);color:var(--qual-deep)}
+/* vedha rides on top of the green it blocks — kept crimson against that green */
+.pcved{position:absolute;bottom:0;height:6px;border-radius:999px;z-index:3;background:var(--vedha);
+  box-shadow:0 0 0 1.5px var(--surface);min-width:3px}
 .pcref{position:absolute;left:3px;top:50%;transform:translateY(-50%);font-size:9.5px;color:var(--muted-2);z-index:2;pointer-events:none}
 .pc-lab-refs{display:flex;gap:5px;font-size:10px;color:var(--muted-2);font-weight:700}
 .pclegend{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;padding:14px 20px 8px;color:var(--muted);font-size:12.5px}
@@ -188,23 +200,21 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .pcsw.is-fav{background:var(--fav-bg);border-color:var(--fav)}
 .pcsw.is-unfav{background:var(--unfav-bg);border-color:var(--unfav)}
 .pcsw.is-qual{background:var(--qual-bg);border-color:var(--qual)}
-.pcsw.is-ved{background:var(--vedha);border-color:var(--vedha);height:5px;border-radius:999px}
+.pcsw.is-ved{background:var(--vedha);border-color:var(--vedha);height:6px;border-radius:999px}
 
 /* ---- reference tables in the help panel ---- */
 .reftbl{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
 .reftbl th,.reftbl td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .reftbl th{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--muted-2)}
 .reftbl td:first-child{font-weight:700}
-.reftbl .fv{color:var(--fav);font-weight:700}
-.reftbl .vd{color:var(--vedha);font-weight:700}
+.reftbl .fv{color:var(--fav-deep);font-weight:700}
+.reftbl .vd{color:var(--vedha-deep);font-weight:700}
 .refwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .help-full{grid-column:1/-1}
 
 /* ---- controls ---- */
-.controls{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:16px 18px;margin-bottom:22px;
-  display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
-.controls-lead{flex-basis:100%;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted-2);margin-bottom:-4px}
+/* sits inside a .foldcard now — the card supplies the surface, border and shadow */
+.controls{padding:2px 18px 18px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .ctl{display:flex;flex-direction:column;gap:7px}
 .ctl>label{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted-2)}
 .period{display:flex;gap:8px;align-items:center}
@@ -226,9 +236,6 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .mini:hover{text-decoration:underline}
 
 /* ---- section head ---- */
-.section-head{margin:6px 2px 12px}
-.section-head h2{margin:0;font-size:21px}
-.section-head .sub{color:var(--muted);font-size:13px;margin-top:2px}
 
 /* ---- legend + capability ---- */
 .legendrow{display:flex;flex-wrap:wrap;gap:22px;align-items:center;color:var(--muted)}
@@ -245,7 +252,7 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .gl-comb{width:20px;height:12px;border-radius:999px;background:var(--comb-bg);border:2px solid var(--comb)}
 
 /* ---- gochara influence ---- */
-.gochara{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:22px}
+.gochara{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .goc{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 16px}
 .goc .gh{display:flex;align-items:center;gap:9px;font-family:var(--font-h);font-size:18px;line-height:1}
 .goc .gh .gd{width:12px;height:12px;border-radius:999px;flex:none}
@@ -253,12 +260,12 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .goc .pos{margin:11px 0 2px;font-size:14px;color:var(--muted)}
 .goc .pos b{color:var(--text);font-size:15px}
 .goc .motiontag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;vertical-align:middle}
-.goc .motiontag.is-retro{color:var(--retro);background:var(--retro-bg)}
-.goc .motiontag.is-direct{color:var(--direct);background:var(--direct-bg)}
+.goc .motiontag.is-retro{color:var(--retro-deep);background:var(--retro-bg)}
+.goc .motiontag.is-direct{color:var(--direct-deep);background:var(--direct-bg)}
 .goc .lab{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted-2);margin:12px 0 6px}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .rtag{display:inline-flex;align-items:center;background:var(--surface-2);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.rtag.pos{background:var(--transit-bg);border-color:var(--transit);color:var(--transit)}
+.rtag.pos{background:var(--transit-bg);border-color:var(--transit);color:var(--transit-deep)}
 /* per-period rows, shown only when a graha's sign or motion changes inside the window */
 .goc .gseg{padding:9px 0;border-top:1px dashed var(--line)}
 .goc .gseg:first-of-type{border-top:none}
@@ -273,12 +280,12 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .goc .gnote{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);
   font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .goc .gnote+.gnote{margin-top:4px;padding-top:0;border-top:none}
-.goc .gnote.is-retro{color:var(--retro)}
-.goc .gnote.is-comb{color:var(--comb)}
+.goc .gnote.is-retro{color:var(--retro-deep)}
+.goc .gnote.is-comb{color:var(--comb-deep)}
 .goc-dbl{grid-column:1/-1;border:2px solid var(--comb);background:var(--comb-bg)}
-.goc-dbl .gh{color:var(--comb)}
+.goc-dbl .gh{color:var(--comb-deep)}
 .goc-dbl .lab{color:color-mix(in oklab,var(--comb) 70%,var(--text))}
-.goc-dbl .rtag{background:var(--surface);border-color:var(--comb);color:var(--comb)}
+.goc-dbl .rtag{background:var(--surface);border-color:var(--comb);color:var(--comb-deep)}
 .goc-dbl .rtag b{margin-left:5px;font-weight:800;opacity:.75}
 .goc-dbl .none{color:var(--muted);font-size:13px;font-style:italic}
 .goc-dbl .dt{display:flex;flex-direction:column}
@@ -287,7 +294,7 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .dt-row.is-now{background:color-mix(in oklab,var(--comb) 14%,transparent);border-radius:10px;margin:0 -9px;padding:11px 9px}
 .dt-row.is-now+.dt-row{border-top:none}
 .dt-head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
-.dt-when{font-weight:800;font-size:12.5px;color:color-mix(in oklab,var(--comb) 78%,var(--text));font-variant-numeric:tabular-nums}
+.dt-when{font-weight:800;font-size:12.5px;color:color-mix(in oklab,var(--comb) 32%,var(--text));font-variant-numeric:tabular-nums}
 .dt-cause{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .dt-ctx{font-size:11px;color:var(--muted);margin-top:3px}
 .dt-rasis{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
@@ -316,6 +323,8 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .fold-head .sub{color:var(--muted);font-size:13px;margin-top:1px}
 .chev{font-size:18px;color:var(--muted);transition:transform .2s;flex:none}
 .foldwrap.collapsed{display:none}
+/* fold bodies that hold cards/controls rather than a full-bleed grid */
+.foldpad{padding:2px 18px 18px}
 .board .legendrow{padding:14px 20px 6px}
 
 /* ---- board ---- */
@@ -331,10 +340,10 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .badges{display:flex;flex-wrap:wrap;gap:5px}
 .bdg{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
 .bdg .d{width:7px;height:7px;border-radius:2px}
-.bdg-t{background:var(--transit-bg);color:var(--transit)} .bdg-t .d{background:var(--transit);transform:rotate(45deg)}
-.bdg-r{background:var(--retro-bg);color:var(--retro)} .bdg-r .d{background:var(--retro);border-radius:999px}
-.bdg-d{background:var(--direct-bg);color:var(--direct)} .bdg-d .d{background:var(--direct);border-radius:999px}
-.bdg-c{background:var(--comb-bg);color:var(--comb)} .bdg-c .d{background:var(--comb);border-radius:999px}
+.bdg-t{background:var(--transit-bg);color:var(--transit-deep)} .bdg-t .d{background:var(--transit);transform:rotate(45deg)}
+.bdg-r{background:var(--retro-bg);color:var(--retro-deep)} .bdg-r .d{background:var(--retro);border-radius:999px}
+.bdg-d{background:var(--direct-bg);color:var(--direct-deep)} .bdg-d .d{background:var(--direct);border-radius:999px}
+.bdg-c{background:var(--comb-bg);color:var(--comb-deep)} .bdg-c .d{background:var(--comb);border-radius:999px}
 .track{position:relative;border-bottom:1px solid var(--line);border-left:1.5px solid var(--line);min-height:46px;overflow:hidden}
 .track .gline{position:absolute;top:0;bottom:0;border-left:1px solid color-mix(in oklab,var(--line) 60%,transparent)}
 .track:hover{background:color-mix(in oklab,var(--accent) 5%,transparent)}
@@ -343,7 +352,7 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
 .mk .mklbl{position:absolute;left:calc(100% + 3px);top:50%;transform:translateY(-50%);font-size:9px;font-weight:800;color:var(--muted-2);white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
 .combbar{position:absolute;top:8px;bottom:8px;background:repeating-linear-gradient(45deg,var(--comb-bg),var(--comb-bg) 6px,color-mix(in oklab,var(--comb) 22%,var(--comb-bg)) 6px,color-mix(in oklab,var(--comb) 22%,var(--comb-bg)) 12px);
   border:2px solid var(--comb);border-radius:999px;z-index:1;min-width:6px;display:flex;align-items:center;padding:0 8px;overflow:hidden}
-.combbar b{font-size:10.5px;color:var(--comb);font-weight:800;white-space:nowrap}
+.combbar b{font-size:10.5px;color:var(--comb-deep);font-weight:800;white-space:nowrap}
 .emptyrow{grid-column:2;padding:26px;text-align:center;color:var(--muted-2);border-bottom:1px solid var(--line);font-style:italic}
 
 /* ---- timeline detail list ---- */
@@ -438,12 +447,16 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
   <div class="nowcard" id="nowcard"></div>
 
   <!-- GOCHARA PHALA — which bhava each graha transits, and whether that is auspicious -->
-  <div class="section-head">
-    <h2>Gochara Phala · right now</h2>
-    <div class="sub" id="phalasub"></div>
+  <div class="foldcard">
+    <button class="fold-head" id="ph-toggle" aria-expanded="true">
+      <div><h2>Gochara Phala · right now</h2><div class="sub" id="phalasub"></div></div>
+      <span class="chev" id="ph-chev">▾</span>
+    </button>
+    <div id="phwrap" class="foldwrap foldpad">
+      <div class="score" id="phalascore"></div>
+      <div class="phala" id="phala"></div>
+    </div>
   </div>
-  <div class="score" id="phalascore"></div>
-  <div class="phala" id="phala"></div>
 
   <!-- how to read -->
   <div class="help">
@@ -496,8 +509,13 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
   </div>
 
   <!-- explore controls -->
+  <div class="foldcard">
+    <button class="fold-head" id="ctl-toggle" aria-expanded="true">
+      <div><h2>Explore another period</h2><div class="sub" id="ctlsub"></div></div>
+      <span class="chev" id="ctl-chev">▾</span>
+    </button>
+    <div id="ctlwrap" class="foldwrap">
   <div class="controls">
-    <div class="controls-lead">Explore another period</div>
     <div class="ctl">
       <label>Period</label>
       <div class="period">
@@ -517,13 +535,19 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;
       <div class="grahas" id="grahas"></div>
     </div>
   </div>
+    </div>
+  </div>
 
   <!-- GOCHARA + DOUBLE TRANSIT (primary) -->
-  <div class="section-head">
-    <h2>Gochara &amp; Double Transit</h2>
-    <div class="sub" id="gocharasub"></div>
+  <div class="foldcard">
+    <button class="fold-head" id="goc-toggle" aria-expanded="true">
+      <div><h2>Gochara &amp; Double Transit</h2><div class="sub" id="gocharasub"></div></div>
+      <span class="chev" id="goc-chev">▾</span>
+    </button>
+    <div id="gocwrap" class="foldwrap foldpad">
+      <div class="gochara" id="gochara"></div>
+    </div>
   </div>
-  <div class="gochara" id="gochara"></div>
 
   <!-- phala calendar (collapsible) — favourability of every graha across the period -->
   <div class="foldcard hide" id="pccard">
@@ -758,6 +782,9 @@ function detectTZ(){ try{ const z=Intl.DateTimeFormat().resolvedOptions().timeZo
 /* the natal chart is remembered between visits (nothing leaves the browser) */
 function loadRasi(k){ try{ const v=parseInt(localStorage.getItem(k),10); return (v>=0&&v<=11)?v:-1; }catch(e){ return -1; } }
 function saveRasi(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+/* which sections the user left open */
+function foldOpen(k,def){ try{ const v=localStorage.getItem("gt.fold."+k); return v===null?def:v==="1"; }catch(e){ return def; } }
+function saveFold(k,open){ try{ localStorage.setItem("gt.fold."+k,open?"1":"0"); }catch(e){} }
 const state={ year:null, month:null /*0-11 or null=whole year*/, tz:detectTZ(), rasiLang:"sanskrit",
   grahas:new Set(DEFAULT_GRAHAS), moon:loadRasi("gt.moon"), lagna:loadRasi("gt.lagna") };
 
@@ -905,13 +932,25 @@ function initUI(){
   $("#theme").onclick=()=>{ const d=document.body.getAttribute("data-theme")==="dark"; document.body.setAttribute("data-theme",d?"light":"dark"); $("#theme").textContent=d?"🌙":"☀️"; };
   // rasi language
   $("#rasi").onclick=()=>{ state.rasiLang=state.rasiLang==="english"?"sanskrit":"english"; $("#rasi").textContent=state.rasiLang==="english"?"A":"अ"; $("#rasi").title="Rasi names: "+(state.rasiLang==="english"?"English (tap for Sanskrit)":"Sanskrit (tap for English)"); render(); };
-  // collapsible sections
-  const mkToggle=(btn,wrap,chev,onOpen)=>{ $(btn).onclick=()=>{ const open=$(wrap).classList.toggle("collapsed")===false; $(btn).setAttribute("aria-expanded",open); $(chev).style.transform=open?"rotate(180deg)":""; if(open&&onOpen) onOpen(); }; };
-  mkToggle("#help-toggle","#help-body","#help-chev");
+  // collapsible sections — each remembers whether the user left it open
+  const mkToggle=(key,btn,wrap,chev,defOpen,onOpen)=>{
+    const set=open=>{
+      $(wrap).classList.toggle("collapsed",!open);
+      $(btn).setAttribute("aria-expanded",open);
+      $(chev).style.transform=open?"rotate(180deg)":"";
+      if(open&&onOpen) onOpen();
+    };
+    set(foldOpen(key,defOpen));
+    $(btn).onclick=()=>{ const open=$(wrap).classList.contains("collapsed"); saveFold(key,open); set(open); };
+  };
+  mkToggle("help","#help-toggle","#help-body","#help-chev",false);
+  mkToggle("phala","#ph-toggle","#phwrap","#ph-chev",true);
+  mkToggle("ctl","#ctl-toggle","#ctlwrap","#ctl-chev",true);
+  mkToggle("goc","#goc-toggle","#gocwrap","#goc-chev",true);
   // widths are only measurable once the section is visible
-  mkToggle("#pc-toggle","#pcwrap","#pc-chev",()=>{ labelPhalaSegs(); syncPanHints(); });
-  mkToggle("#board-toggle","#boardwrap","#board-chev",syncPanHints);
-  mkToggle("#tl-toggle","#listwrap","#tl-chev");
+  mkToggle("pc","#pc-toggle","#pcwrap","#pc-chev",true,()=>{ labelPhalaSegs(); syncPanHints(); });
+  mkToggle("board","#board-toggle","#boardwrap","#board-chev",true,syncPanHints);
+  mkToggle("tl","#tl-toggle","#listwrap","#tl-chev",false);
 }
 function syncYearOpts(){
   $("#year").innerHTML=YEARS.map(y=>`<option value="${y}"${y===state.year?" selected":""}>${y}</option>`).join("");
@@ -962,6 +1001,7 @@ function render(){
   $("#boardsub").textContent=`${win.length} event${win.length!==1?"s":""} · ${sel.length} graha${sel.length!==1?"s":""} · ${tzAbbr(Date.now())}`;
   $("#detailsub").textContent=`${win.length} event${win.length!==1?"s":""} · times in ${tzAbbr(Date.now())}`;
   $("#gocharasub").textContent=`${per} · positions, drishti & the Guru–Shani double transit`;
+  $("#ctlsub").textContent=`${per} · ${sel.length} of ${ORDER.length} grahas · ${state.tz.replace(/_/g," ")}`;
 
   // capability note (single graha selected)
   const cap=$("#cap");
@@ -985,7 +1025,7 @@ function renderRefTable(){
   const rows=ORDER.map(pl=>{
     const v=VEDHA[pl]||{}, q=FAVQ[pl]||{}, hasV=Object.keys(v).length;
     const fav=FAV[pl].map(b=>`<span class="fv">${b}</span>`).join(", ")+
-      (Object.keys(q).length?` <span style="color:var(--qual)">(+${Object.keys(q).join(", ")} qualified)</span>`:"");
+      (Object.keys(q).length?` <span style="color:var(--qual-deep)">(+${Object.keys(q).join(", ")} qualified)</span>`:"");
     const ved=hasV ? FAV[pl].map(b=>`${b}<span class="vd">→</span>${v[b]||"—"}`).join(", ")
                    : `<span style="color:var(--muted-2)">no vedha</span>`;
     const en=GSAN[pl]===pl?"":` <small style="color:var(--muted);font-weight:500">${pl}</small>`;
@@ -1026,7 +1066,7 @@ function renderPhala(){
     score.innerHTML="";
     wrap.innerHTML=`<div class="phcta"><b>Add your Moon rasi (and Lagna) above.</b><br>
       Each graha's transit is then read by the <b>bhava</b> it occupies from those points — auspicious,
-      inauspicious, or auspicious-but-<b style="color:var(--vedha)">blocked by vedha</b> <span class="dot"></span>.</div>`;
+      inauspicious, or auspicious-but-<b style="color:var(--vedha-deep)">blocked by vedha</b> <span class="dot"></span>.</div>`;
     return;
   }
   const pos=positionsAt(now);
@@ -1036,8 +1076,10 @@ function renderPhala(){
   score.innerHTML=R.map((r,ri)=>{
     const c={fav:0,blocked:0,qual:0,unfav:0}; ORDER.forEach(pl=>c[read[pl][ri].state]++);
     const keys=["fav","blocked","qual","unfav"].filter(k=>c[k]);
+    // the bar is a solid block, so it takes the vivid fill; the tally is text on the plain
+    // surface, so it takes the deep tone (amber-on-cream measures 2.12:1 otherwise)
     const bar=keys.map(k=>`<i style="flex:${c[k]};background:var(--${HUE[k]})"${tipAttr(`${c[k]} of 9 grahas ${r.label}: ${PSTATE[k].lab}`)}></i>`).join("");
-    const tally=keys.map(k=>`<span style="color:var(--${HUE[k]})">${PSTATE[k].sym} ${c[k]} ${PSTATE[k].lab}</span>`).join(`<span style="opacity:.5">·</span>`);
+    const tally=keys.map(k=>`<span style="color:var(--${HUE[k]}-deep)">${PSTATE[k].sym} ${c[k]} ${PSTATE[k].lab}</span>`).join(`<span style="opacity:.5">·</span>`);
     return `<span class="sc"><span class="scref">${r.icon} ${r.label}</span><span class="scbar">${bar}</span>${tally}</span>`;
   }).join("");
   $("#phalasub").textContent=`${dateShort(now)} · bhava of every graha ${R.map(r=>r.label).join(" & ")}, with vedha`;
@@ -1131,7 +1173,7 @@ function renderPhalaCal(sel,s,en,cols,unit,per){
     const base0=bhavaSegments(pl,s,en,R[0].idx);
     const good=base0.filter(g=>g.state==="fav").reduce((a,g)=>a+(g.t1-g.t0),0);
     const pct=Math.round((good/span)*100);
-    const pstyle=pct?`background:var(--fav-bg);color:var(--fav)`:`background:var(--surface-2);color:var(--muted-2)`;
+    const pstyle=pct?`background:var(--fav-bg);color:var(--fav-deep)`:`background:var(--surface-2);color:var(--text)`;
     grid.insertAdjacentHTML("beforeend",
       `<div class="row-label"><span class="nm"><span class="gd" style="background:${GCOLOR[pl]}"></span>${GSAN[pl]}</span>
         <span class="badges"><span class="bdg" style="${pstyle}"${tipAttr(
